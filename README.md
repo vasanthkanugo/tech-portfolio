@@ -1,16 +1,30 @@
-# React + Vite
+# tech-portfolio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Personal portfolio site for Gopala Krishna Vasanth Kanugo.
 
-Currently, two official plugins are available:
+🌐 **Live:** https://vasanthkanugo.github.io/tech-portfolio/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+- [Vite](https://vitejs.dev/) + [React](https://react.dev/)
+- [Tailwind CSS v4](https://tailwindcss.com/)
+- [Framer Motion](https://www.framer.com/motion/)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Features
 
-## Expanding the ESLint configuration
+- Horizontal drag-to-scroll timeline (desktop) / vertical timeline (mobile)
+- Discipline filter bar — Frontend, Backend, Fullstack, Infra, Data, Mobile, ML
+- Card modal with highlights and tech stack
+- Dark mode with toggle
+- Resume download
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Local Development
+
+```bash
+npm install
+npm run dev
+```
+
+## Deployment
+
+Auto-deploys to GitHub Pages on every push to `main` via GitHub Actions.
