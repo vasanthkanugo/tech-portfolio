@@ -50,7 +50,7 @@ export default function Header({ dark, onToggleDark }) {
             vasanth.kanugo@gmail.com
           </a>
           <a
-            href="/resume.pdf"
+            href={`${import.meta.env.BASE_URL}resume.pdf`}
             download
             className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
             style={{ marginLeft: '-8px' }}
