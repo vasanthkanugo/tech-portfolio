@@ -1,9 +1,9 @@
 export default function Header({ dark, onToggleDark }) {
   return (
-    <header className="w-full border-b border-gray-200 dark:border-gray-800 bg-stone-100 dark:bg-gray-950 py-10 px-8 relative">
+    <header className="w-full border-b border-gray-200 dark:border-gray-800 bg-stone-100 dark:bg-gray-950 py-6 sm:py-10 px-4 sm:px-8 relative">
       <button
         onClick={onToggleDark}
-        className="absolute top-6 right-8 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        className="absolute top-4 right-4 sm:top-6 sm:right-8 p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         aria-label="Toggle dark mode"
       >
         {dark ? (
@@ -18,7 +18,7 @@ export default function Header({ dark, onToggleDark }) {
       </button>
 
       <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+        <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
           Gopala Krishna Vasanth Kanugo
         </h1>
         <p className="text-lg text-indigo-500 dark:text-indigo-400 font-medium mt-2">
@@ -28,7 +28,7 @@ export default function Header({ dark, onToggleDark }) {
           "Building systems that scale and breaking them to find out why."
         </p>
 
-        <div className="flex items-center justify-center gap-8 mt-4">
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 mt-4">
           <a
             href="https://linkedin.com/in/vasanth-kanugo"
             target="_blank"

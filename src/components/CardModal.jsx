@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect } from 'react'
 import { DISCIPLINE_COLORS } from '../constants/disciplines'
 
-export default function CardModal({ item, onClose }) {
+export default function CardModal({ item, onClose, isMobile = false }) {
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
@@ -21,17 +21,23 @@ export default function CardModal({ item, onClose }) {
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            onClick={onClose}
+            initial={isMobile ? { y: '100%' } : { opacity: 0, scale: 0.95, y: 20 }}
+            animate={isMobile ? { y: 0 } : { opacity: 1, scale: 1, y: 0 }}
+            exit={isMobile ? { y: '100%' } : { opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            className={`fixed z-50 ${isMobile ? 'inset-x-0 bottom-0' : 'inset-0 flex items-center justify-center p-4'}`}
+            onClick={isMobile ? undefined : onClose}
           >
             <div
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-lg bg-stone-50 dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+              className={`w-full bg-stone-50 dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden ${isMobile ? 'rounded-t-2xl max-h-[85vh] flex flex-col' : 'max-w-lg rounded-2xl'}`}
             >
+              {/* Mobile drag handle */}
+              {isMobile && (
+                <div className="flex justify-center pt-3 pb-1" onClick={onClose}>
+                  <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                </div>
+              )}
               {/* Header */}
               <div className="p-6 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-start justify-between gap-4">
@@ -75,7 +81,7 @@ export default function CardModal({ item, onClose }) {
               </div>
 
               {/* Body */}
-              <div className="p-6 space-y-5 max-h-[60vh] overflow-y-auto">
+              <div className="p-6 space-y-5 overflow-y-auto flex-1" style={{ maxHeight: isMobile ? undefined : '60vh' }}>
                 {/* Highlights */}
                 <div>
                   <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">
