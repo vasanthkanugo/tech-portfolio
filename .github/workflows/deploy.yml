@@ -31,6 +31,7 @@ jobs:
       - run: npm run build
         env:
           VITE_CF_BEACON_TOKEN: ${{ secrets.CF_BEACON_TOKEN }}
+          VITE_CLAUDE_WORKER_URL: ${{ secrets.VITE_CLAUDE_WORKER_URL }}
 
       - uses: actions/configure-pages@v4
 
