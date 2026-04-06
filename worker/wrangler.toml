@@ -1,0 +1,11 @@
+name = "ask-gopala"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[env.production]
+routes = [
+  { pattern = "ask-gopala.*.workers.dev", zone_name = "workers.dev" }
+]
+
+# Set GEMINI_API_KEY as a secret using:
+# wrangler secret put GEMINI_API_KEY
