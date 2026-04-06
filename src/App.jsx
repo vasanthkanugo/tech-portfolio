@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import FilterBar from './components/FilterBar'
 import Timeline from './components/Timeline'
+import ChatWidget from './components/ChatWidget'
 import { experiences, projects, education, disciplines } from './data/experience'
 import './App.css'
 
@@ -36,6 +37,8 @@ export default function App() {
 
         <Timeline items={filtered} selected={selected} onSelect={setSelected} />
       </main>
+
+      <ChatWidget />
     </div>
   )
 }
