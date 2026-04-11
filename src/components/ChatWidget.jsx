@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { askClaude } from '../api/claude'
+import { jobScenarios } from '../data/job-scenarios'
+import { jdMatchMetrics, JD_MATCH_INSTRUCTIONS } from '../data/jd-match-metrics'
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() =>
@@ -43,21 +45,33 @@ export default function ChatWidget() {
   async function handleSend() {
     if (!input.trim()) return
 
-    const userMessage = { role: 'user', content: input }
-    const nextMessages = [...messages, userMessage]
+    let messageContent = input.trim()
+    let displayContent = input.trim()
 
-    setMessages(nextMessages)
+    if (messageContent.startsWith('/match ')) {
+      const jdText = messageContent.slice('/match '.length).trim()
+      if (!jdText) return
+      displayContent = '📋 Analyzing JD match...'
+      const dimensionList = jdMatchMetrics
+        .map(d => `- ${d.label} (weight: ${d.weight}): ${d.description}`)
+        .join('\n')
+      messageContent = `${JD_MATCH_INSTRUCTIONS}\n\nScoring dimensions to use:\n${dimensionList}\n\nJob Description to analyze:\n${jdText}`
+    }
+
+    const nextMessages = [...messages, { role: 'user', content: messageContent }]
+    const displayMessages = [...messages, { role: 'user', content: displayContent }]
+
+    setMessages(displayMessages)
     setInput('')
     setError(null)
     setIsLoading(true)
 
     try {
       const reply = await askClaude(nextMessages)
-      setMessages([...nextMessages, { role: 'assistant', content: reply }])
+      setMessages([...displayMessages, { role: 'assistant', content: reply }])
     } catch (err) {
       setError('Failed to get response. Please try again.')
       console.error('Chat error:', err)
-      // Remove the user message if API call fails
       setMessages(messages)
     } finally {
       setIsLoading(false)
@@ -110,7 +124,7 @@ export default function ChatWidget() {
             >
               {/* Header */}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
-                <h3 className="font-semibold text-gray-900 dark:text-white">Ask Gopala</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Ask Me</h3>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -124,8 +138,25 @@ export default function ChatWidget() {
               {/* Messages Container */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.length === 0 && (
-                  <div className="text-center text-sm text-gray-500 dark:text-gray-400 mt-8">
-                    Ask me anything about Gopala's experience! 👋
+                  <div className="mt-8 space-y-4">
+                    <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+                      Ask me anything about my experience! 👋
+                    </p>
+                    {jobScenarios.length > 0 && (
+                      <div className="overflow-x-auto pb-1 -mx-1 px-1">
+                        <div className="flex gap-2 w-max">
+                          {jobScenarios.map((scenario) => (
+                            <button
+                              key={scenario.id}
+                              onClick={() => setInput(`Tell me about: ${scenario.title}`)}
+                              className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors whitespace-nowrap"
+                            >
+                              {scenario.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -168,7 +199,14 @@ export default function ChatWidget() {
               </div>
 
               {/* Input Area */}
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 space-y-2">
+                <button
+                  onClick={() => setInput('/match ')}
+                  disabled={isLoading}
+                  className="text-xs px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Drop a JD — let's see if I'm your hire
+                </button>
                 <div className="flex gap-2">
                   <textarea
                     value={input}
@@ -203,7 +241,7 @@ export default function ChatWidget() {
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg flex items-center justify-center transition-colors ${
           isOpen ? 'hidden' : ''
         }`}
-        title="Ask Gopala"
+        title="Ask Me"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
