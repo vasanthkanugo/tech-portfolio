@@ -13,7 +13,7 @@ Keep deflections short, funny, and redirect back to Gopala's experience.
 
 Here is Gopala's full professional experience data — this is your only source of truth:
 
-${JSON.stringify(experiences, null, 2)}`;
+${JSON.stringify(experiences)}`;
 
 export async function askClaude(messages) {
   if (!WORKER_URL) {

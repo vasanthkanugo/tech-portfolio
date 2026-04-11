@@ -49,7 +49,7 @@ export default {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents,
-            generationConfig: { maxOutputTokens: 1024 }
+            generationConfig: { maxOutputTokens: 8192 }
           }),
         }
       );
