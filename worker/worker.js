@@ -24,12 +24,15 @@ export default {
     try {
       let { messages, systemPrompt } = await request.json();
       const lastMessage = messages[messages.length - 1];
-      const userQuestion = lastMessage?.content || 'N/A';
+      const rawContent = lastMessage?.content || '';
 
-      // Log the incoming question
-      console.log(`[CHAT] User question: "${userQuestion.slice(0, 200)}"`);
-      console.log(`[CHAT] Origin: ${origin}`);
-      console.log(`[CHAT] Time: ${new Date().toISOString()}`);
+      // Log only the actual user question — strip /match instructions if present
+      const isMatch = rawContent.startsWith('You are acting as an impartial');
+      const jdLine = isMatch ? rawContent.match(/Job Description to analyze:\n([\s\S]{0,300})/)?.[1] : null;
+      const loggedQuestion = isMatch
+        ? `[JD MATCH] ${jdLine ? jdLine.trim().slice(0, 200) + '...' : '(no JD text)'}`
+        : rawContent.slice(0, 200);
+      console.log(`[CHAT] "${loggedQuestion}"`);
 
       // If last user message contains a URL, fetch and inject the page text
       const urlMatch = lastMessage?.content?.match(/https?:\/\/[^\s]+/);
@@ -52,7 +55,7 @@ export default {
               ? { ...msg, content: msg.content.replace(url, `\n\nFetched page content from ${url}:\n${plainText}`) }
               : msg
           );
-          console.log(`[CHAT] Injected ${plainText.length} chars from URL`);
+          console.log(`[CHAT] Fetched ${plainText.length} chars from ${url}`);
         } catch (fetchErr) {
           console.log(`[CHAT] URL fetch failed: ${fetchErr.message}`);
         }
@@ -96,7 +99,6 @@ export default {
       }
 
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
-      console.log(`[CHAT] Response sent (${text.length} chars)`);
 
       return new Response(JSON.stringify({ content: [{ text }] }), {
         headers: {
