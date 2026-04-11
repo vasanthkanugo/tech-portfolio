@@ -83,8 +83,13 @@ export default function ChatWidget() {
     setError(null)
     setIsLoading(true)
 
+    const isMatchRequest = displayContent === '📋 Analyzing JD match...'
+
     try {
-      const reply = await askClaude(nextMessages)
+      let reply = await askClaude(nextMessages)
+      if (isMatchRequest) {
+        reply += '\n\n---\n\n*There\'s a lot more to my story than what fits here. If you\'d like to dig deeper, I\'d love to connect! Reach out via [LinkedIn](https://linkedin.com/in/vasanth-kanugo) or email me at vasanth.kanugo@gmail.com — always happy to chat or jump on a quick call.* 🤝'
+      }
       setMessages([...displayMessages, { role: 'assistant', content: reply }])
     } catch (err) {
       setError('Failed to get response. Please try again.')
