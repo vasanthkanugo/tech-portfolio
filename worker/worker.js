@@ -4,7 +4,29 @@
  * Proxies chat requests to Google Gemini API
  * Logs all incoming questions to Cloudflare Worker logs
  * Handles CORS for GitHub Pages origin
+ * Rate limits per IP: 10 requests per hour
  */
+
+// In-memory rate limit store — resets when the worker instance restarts
+const rateLimitMap = new Map();
+const RATE_LIMIT = 10;       // max requests per window
+const WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip) || { count: 0, windowStart: now };
+
+  if (now - entry.windowStart > WINDOW_MS) {
+    // Reset window
+    entry.count = 1;
+    entry.windowStart = now;
+  } else {
+    entry.count += 1;
+  }
+
+  rateLimitMap.set(ip, entry);
+  return entry.count > RATE_LIMIT;
+}
 
 export default {
   async fetch(request, env) {
@@ -19,6 +41,22 @@ export default {
           'Access-Control-Allow-Headers': 'Content-Type',
         },
       });
+    }
+
+    const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+
+    if (isRateLimited(ip)) {
+      console.log(`[CHAT] Rate limited: ${ip}`);
+      return new Response(
+        JSON.stringify({ content: [{ text: "Easy there! You've sent a lot of messages in the past hour. Give it a bit and come back — I'm not going anywhere. 😄" }] }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': 'https://vasanthkanugo.github.io',
+          },
+        }
+      );
     }
 
     try {
@@ -74,7 +112,7 @@ export default {
 
       // Call Gemini API
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
