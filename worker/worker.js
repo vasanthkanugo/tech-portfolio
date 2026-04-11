@@ -1,15 +1,20 @@
 /**
- * Cloudflare Worker for "Ask Gopala" chatbot
+ * Cloudflare Worker for "Ask Me" chatbot
  *
- * Proxies chat requests to Google Gemini API
- * Logs all incoming questions to Cloudflare Worker logs
- * Handles CORS for GitHub Pages origin
+ * Uses Cloudflare Workers AI (llama-3.3-70b) — no external API key needed
  * Rate limits per IP: 10 requests per hour
+ * Handles CORS for GitHub Pages origin
  */
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': 'https://vasanthkanugo.github.io',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
 // In-memory rate limit store — resets when the worker instance restarts
 const rateLimitMap = new Map();
-const RATE_LIMIT = 10;       // max requests per window
+const RATE_LIMIT = 10;
 const WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 function isRateLimited(ip) {
@@ -17,7 +22,6 @@ function isRateLimited(ip) {
   const entry = rateLimitMap.get(ip) || { count: 0, windowStart: now };
 
   if (now - entry.windowStart > WINDOW_MS) {
-    // Reset window
     entry.count = 1;
     entry.windowStart = now;
   } else {
@@ -30,17 +34,9 @@ function isRateLimited(ip) {
 
 export default {
   async fetch(request, env) {
-    const origin = request.headers.get('origin');
-
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': 'https://vasanthkanugo.github.io',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        },
-      });
+      return new Response(null, { headers: CORS_HEADERS });
     }
 
     const ip = request.headers.get('cf-connecting-ip') || 'unknown';
@@ -49,13 +45,7 @@ export default {
       console.log(`[CHAT] Rate limited: ${ip}`);
       return new Response(
         JSON.stringify({ content: [{ text: "Easy there! You've sent a lot of messages in the past hour. Give it a bit and come back — I'm not going anywhere. 😄" }] }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': 'https://vasanthkanugo.github.io',
-          },
-        }
+        { status: 429, headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
       );
     }
 
@@ -64,11 +54,11 @@ export default {
       const lastMessage = messages[messages.length - 1];
       const rawContent = lastMessage?.content || '';
 
-      // Log only the actual user question — strip /match instructions if present
+      // Log the actual question (not the full /match instructions blob)
       const isMatch = rawContent.startsWith('You are acting as an impartial');
-      const jdLine = isMatch ? rawContent.match(/Job Description to analyze:\n([\s\S]{0,300})/)?.[1] : null;
+      const jdSnippet = isMatch ? rawContent.match(/Job Description to analyze:\n([\s\S]{0,200})/)?.[1] : null;
       const loggedQuestion = isMatch
-        ? `[JD MATCH] ${jdLine ? jdLine.trim().slice(0, 200) + '...' : '(no JD text)'}`
+        ? `[JD MATCH] ${jdSnippet ? jdSnippet.trim() + '...' : '(no JD text)'}`
         : rawContent.slice(0, 200);
       console.log(`[CHAT] "${loggedQuestion}"`);
 
@@ -77,10 +67,8 @@ export default {
       if (urlMatch) {
         try {
           const url = urlMatch[0];
-          console.log(`[CHAT] Fetching URL: ${url}`);
           const pageRes = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
           const html = await pageRes.text();
-          // Strip HTML tags and collapse whitespace to get readable plain text
           const plainText = html
             .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
             .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
@@ -99,59 +87,27 @@ export default {
         }
       }
 
-      // Convert Claude message format to Gemini format
-      const contents = messages.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }]
-      }));
+      // Call Cloudflare Workers AI
+      const aiMessages = [
+        { role: 'system', content: systemPrompt },
+        ...messages.map(msg => ({ role: msg.role, content: msg.content })),
+      ];
 
-      // Add system prompt to first user message
-      if (contents.length > 0 && contents[0].role === 'user') {
-        contents[0].parts[0].text = `${systemPrompt}\n\nUser question: ${contents[0].parts[0].text}`;
-      }
+      const response = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+        messages: aiMessages,
+        max_tokens: 8192,
+      });
 
-      // Call Gemini API
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents,
-            generationConfig: { maxOutputTokens: 8192 }
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.log(`[CHAT] API error: ${data.error?.message}`);
-        return new Response(JSON.stringify(data), {
-          status: response.status,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': 'https://vasanthkanugo.github.io'
-          }
-        });
-      }
-
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
+      const text = response.response || 'No response';
 
       return new Response(JSON.stringify({ content: [{ text }] }), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': 'https://vasanthkanugo.github.io',
-        },
+        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
       });
     } catch (err) {
       console.error(`[CHAT] Error: ${err.message}`);
       return new Response(JSON.stringify({ error: err.message }), {
         status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': 'https://vasanthkanugo.github.io'
-        }
+        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
       });
     }
   },

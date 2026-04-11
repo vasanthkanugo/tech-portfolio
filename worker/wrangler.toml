@@ -15,5 +15,5 @@ enabled = true
 head_sampling_rate = 1
 invocation_logs = true
 
-# Set GEMINI_API_KEY as a secret using:
-# wrangler secret put GEMINI_API_KEY
+[ai]
+binding = "AI"
