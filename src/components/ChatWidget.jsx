@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { askClaude } from '../api/claude'
 import { jobScenarios } from '../data/job-scenarios'
 import { jdMatchMetrics, JD_MATCH_INSTRUCTIONS } from '../data/jd-match-metrics'
@@ -191,6 +192,7 @@ export default function ChatWidget() {
                     >
                       {msg.role === 'assistant' ? (
                         <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
                           components={{
                             p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
                             h2: ({ children }) => <h2 className="font-bold text-base mt-3 mb-1 first:mt-0">{children}</h2>,

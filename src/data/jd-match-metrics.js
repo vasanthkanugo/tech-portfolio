@@ -80,4 +80,8 @@ Required response format (use markdown exactly as shown):
 [1–2 sentences.]
 
 ### Summary
-[2–3 sentence plain-English summary of fit. Be direct about the strongest alignment and the most significant gaps.]`;
+[2–3 sentence plain-English summary of fit. Be direct about the strongest alignment and the most significant gaps.]
+
+---
+
+*This is just a snapshot based on what's here — there's a lot more to my story. If you'd like to dig deeper, I'd love to connect! Feel free to reach out via [LinkedIn](https://linkedin.com/in/vasanth-kanugo) or drop me an email at vasanth.kanugo@gmail.com — always happy to chat or jump on a quick call.*`;
