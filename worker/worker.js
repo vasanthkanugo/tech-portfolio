@@ -22,13 +22,41 @@ export default {
     }
 
     try {
-      const { messages, systemPrompt } = await request.json();
-      const userQuestion = messages[messages.length - 1]?.content || 'N/A';
+      let { messages, systemPrompt } = await request.json();
+      const lastMessage = messages[messages.length - 1];
+      const userQuestion = lastMessage?.content || 'N/A';
 
       // Log the incoming question
-      console.log(`[CHAT] User question: "${userQuestion}"`);
+      console.log(`[CHAT] User question: "${userQuestion.slice(0, 200)}"`);
       console.log(`[CHAT] Origin: ${origin}`);
       console.log(`[CHAT] Time: ${new Date().toISOString()}`);
+
+      // If last user message contains a URL, fetch and inject the page text
+      const urlMatch = lastMessage?.content?.match(/https?:\/\/[^\s]+/);
+      if (urlMatch) {
+        try {
+          const url = urlMatch[0];
+          console.log(`[CHAT] Fetching URL: ${url}`);
+          const pageRes = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+          const html = await pageRes.text();
+          // Strip HTML tags and collapse whitespace to get readable plain text
+          const plainText = html
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 12000);
+          messages = messages.map((msg, i) =>
+            i === messages.length - 1
+              ? { ...msg, content: msg.content.replace(url, `\n\nFetched page content from ${url}:\n${plainText}`) }
+              : msg
+          );
+          console.log(`[CHAT] Injected ${plainText.length} chars from URL`);
+        } catch (fetchErr) {
+          console.log(`[CHAT] URL fetch failed: ${fetchErr.message}`);
+        }
+      }
 
       // Convert Claude message format to Gemini format
       const contents = messages.map(msg => ({

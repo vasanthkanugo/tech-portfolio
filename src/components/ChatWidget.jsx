@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
 import { askClaude } from '../api/claude'
 import { jobScenarios } from '../data/job-scenarios'
 import { jdMatchMetrics, JD_MATCH_INSTRUCTIONS } from '../data/jd-match-metrics'
@@ -17,6 +18,20 @@ function useIsMobile() {
   return isMobile
 }
 
+function useVisualViewportHeight() {
+  const [height, setHeight] = useState(() =>
+    typeof window !== 'undefined' ? window.visualViewport?.height ?? window.innerHeight : 600
+  )
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const handler = () => setHeight(vv.height)
+    vv.addEventListener('resize', handler)
+    return () => vv.removeEventListener('resize', handler)
+  }, [])
+  return height
+}
+
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState([])
@@ -25,6 +40,7 @@ export default function ChatWidget() {
   const [error, setError] = useState(null)
   const messagesEndRef = useRef(null)
   const isMobile = useIsMobile()
+  const viewportHeight = useVisualViewportHeight()
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -118,9 +134,10 @@ export default function ChatWidget() {
             <div
               className={`bg-stone-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-2xl flex flex-col ${
                 isMobile
-                  ? 'w-full rounded-t-2xl h-[85vh] max-h-[85vh]'
-                  : 'w-96 h-[500px] rounded-2xl'
+                  ? 'w-full rounded-t-2xl'
+                  : 'w-[640px] h-[700px] rounded-2xl'
               }`}
+              style={isMobile ? { height: `${Math.round(viewportHeight * 0.88)}px` } : undefined}
             >
               {/* Header */}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-shrink-0">
@@ -166,13 +183,36 @@ export default function ChatWidget() {
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-xs px-4 py-2 rounded-lg text-sm leading-relaxed ${
+                      className={`max-w-[85%] px-4 py-2.5 rounded-lg text-sm leading-relaxed ${
                         msg.role === 'user'
                           ? 'bg-indigo-500 text-white rounded-br-none'
                           : 'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none'
                       }`}
                     >
-                      {msg.content}
+                      {msg.role === 'assistant' ? (
+                        <ReactMarkdown
+                          components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                            h2: ({ children }) => <h2 className="font-bold text-base mt-3 mb-1 first:mt-0">{children}</h2>,
+                            h3: ({ children }) => <h3 className="font-semibold mt-2 mb-1 first:mt-0">{children}</h3>,
+                            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                            ul: ({ children }) => <ul className="list-disc list-inside space-y-0.5 mb-2">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal list-inside space-y-0.5 mb-2">{children}</ol>,
+                            li: ({ children }) => <li className="leading-snug">{children}</li>,
+                            table: ({ children }) => (
+                              <div className="overflow-x-auto my-2">
+                                <table className="text-xs border-collapse w-full">{children}</table>
+                              </div>
+                            ),
+                            th: ({ children }) => <th className="border border-gray-400 dark:border-gray-600 px-2 py-1 bg-gray-300 dark:bg-gray-700 font-semibold text-left">{children}</th>,
+                            td: ({ children }) => <td className="border border-gray-400 dark:border-gray-600 px-2 py-1">{children}</td>,
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      ) : (
+                        msg.content
+                      )}
                     </div>
                   </div>
                 ))}
