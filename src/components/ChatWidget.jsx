@@ -3,8 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { askClaude } from '../api/claude'
-import { jobScenarios } from '../data/job-scenarios'
 import { jdMatchMetrics, JD_MATCH_INSTRUCTIONS } from '../data/jd-match-metrics'
+
+const WELCOME_MESSAGE = `Hey! I'm Gopala — software engineer with about 8 years across cloud infra, data pipelines, and fullstack.
+
+I've got some good stories if you're curious: there's the time I traced a $2M AWS cost leak to a single NAT Gateway misconfiguration, migrating an entire data pipeline to Kubernetes with zero prior K8s experience, or how I turned a failing research app around by just... putting it in Slack.
+
+Ask me anything — about my experience, a specific role, or drop a job description and I'll tell you how well I'd fit.`
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() =>
@@ -161,25 +166,17 @@ export default function ChatWidget() {
               {/* Messages Container */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.length === 0 && (
-                  <div className="mt-8 space-y-4">
-                    <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-                      Ask me anything about my experience! 👋
-                    </p>
-                    {jobScenarios.length > 0 && (
-                      <div className="overflow-x-auto pb-1 -mx-1 px-1">
-                        <div className="flex gap-2 w-max">
-                          {jobScenarios.map((scenario) => (
-                            <button
-                              key={scenario.id}
-                              onClick={() => setInput(`Tell me about: ${scenario.title}`)}
-                              className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors whitespace-nowrap"
-                            >
-                              {scenario.title}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] px-4 py-2.5 rounded-lg rounded-bl-none text-sm leading-relaxed bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                        }}
+                      >
+                        {WELCOME_MESSAGE}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 )}
 
