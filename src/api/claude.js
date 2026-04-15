@@ -31,7 +31,7 @@ ${JSON.stringify(education)}
 Publications:
 ${JSON.stringify(publications)}
 
-Job Scenario Stories (use these when a user asks about a scenario by title):
+Job Scenario Stories (use these to answer questions about your experience — draw on these proactively whenever a question relates to the topic, even if the user doesn't mention the title directly):
 ${JSON.stringify(jobScenarios)}
 
 JD Match Scoring Dimensions (used when you receive a /match analysis request):
